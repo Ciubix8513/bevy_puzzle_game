@@ -1,0 +1,11 @@
+[package]
+name = "bevy_puzzle_game"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.10.1"
+bevy_rapier3d = { version = "0.21.0", features = ["simd-stable"] }
+bevy_fps_controller = {version = "0.2.1", path = "./bevy_fps_controller/"}
