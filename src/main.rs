@@ -1,9 +1,13 @@
+#![allow(clippy::needless_pass_by_value)]
 use bevy::{prelude::*, window::CursorGrabMode};
 use bevy_fps_controller::controller::FpsControllerPlugin;
 use bevy_rapier3d::prelude::{NoUserData, RapierPhysicsPlugin};
 use player::PlayerPlugin;
+use world::WorldPlugin;
 
+mod bundles;
 mod player;
+mod world;
 
 fn main() {
     App::new()
@@ -17,8 +21,9 @@ fn main() {
                 z: 0.0,
             },
         })
+        .add_plugin(WorldPlugin)
         .add_system(cursor_manager)
-        .run()
+        .run();
 }
 
 fn cursor_manager(

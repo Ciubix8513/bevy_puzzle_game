@@ -1,6 +1,7 @@
+#![allow(clippy::module_name_repetitions)]
 use std::f32::consts::TAU;
 
-use bevy::prelude::*;
+use bevy::{math::Vec3A, prelude::*};
 use bevy_fps_controller::controller::{
     FpsController, FpsControllerInput, LogicalPlayer, RenderPlayer,
 };
@@ -21,16 +22,48 @@ impl Plugin for PlayerPlugin {
         app.insert_resource(InitialPlayerPosition {
             position: self.player_position,
         })
-        .add_startup_system(spawn_player);
+        .add_startup_system(spawn_player)
+        .add_system(player_raycast);
     }
 }
 
-fn spawn_player(
-    pos: Res<InitialPlayerPosition>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+fn player_raycast(
+    context: Res<RapierContext>,
+    player: Query<&Transform, With<RenderPlayer>>,
+    player_collider: Query<Entity, With<LogicalPlayer>>,
+    input: Res<Input<KeyCode>>,
+    world: &World,
 ) {
+    //Do nothing unless just pressed E
+    if !input.just_pressed(KeyCode::E) {
+        return;
+    }
+
+    let player = player.single();
+    let rotation = player.rotation;
+    //Is forward = -Z wtf?
+    let dir = rotation.mul_vec3a(Vec3A::NEG_Z);
+
+    let obj = context.cast_ray(
+        player.translation.into(),
+        dir.into(),
+        10.0,
+        false,
+        QueryFilter::new().exclude_collider(player_collider.single()),
+    );
+
+    if obj.is_none() {
+        return;
+    }
+
+    let obj = obj.unwrap().0;
+    match world.get::<crate::bundles::Name>(obj) {
+        Some(name) => info!("Name is {}", name.0),
+        None => info!("No name"),
+    }
+}
+
+fn spawn_player(pos: Res<InitialPlayerPosition>, mut commands: Commands) {
     commands.spawn((
         Collider::capsule_y(1.0, 0.25),
         Friction {
@@ -69,15 +102,5 @@ fn spawn_player(
             ..Default::default()
         },
         RenderPlayer { player_id: 0 },
-    ));
-
-    commands.spawn((
-        PbrBundle {
-            transform: Transform::from_xyz(0.0, -1.0, 0.0),
-            mesh: meshes.add(shape::Box::new(100.0, 1.0, 100.0).into()),
-            material: materials.add(Color::ANTIQUE_WHITE.into()),
-            ..Default::default()
-        },
-        Collider::cuboid(50.0, 0.5, 50.0),
     ));
 }
